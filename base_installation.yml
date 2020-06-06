@@ -137,6 +137,7 @@
       become_user: "{{ non_sudo_user }}"
       command: code --list-extensions
       register: vs_code_extensions
+      changed_when: false
 
     - name: Install VS Code extensions
       become: yes
@@ -204,6 +205,7 @@
     - name: Get jenkins admin pw
       command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
       register: jenkins_admin_pw
+      changed_when: false
 
     - name: Print jenkins admin pw
       debug:
