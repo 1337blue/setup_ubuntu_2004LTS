@@ -24,3 +24,4 @@ jobs:
     # Runs a single command using the runners shell
     - name: ansible-lint
       uses: ansible/ansible-lint-action@v4.1.0
+      with: base_installation.yml
