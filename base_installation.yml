@@ -35,7 +35,7 @@
       when:
         - '"user.email" not in output.config_values'
         - '"@" in git_email'
-    
+
     - name: Add git user name
       git_config:
         name: user.name
@@ -69,7 +69,7 @@
         - iotop
         - virtualbox
         - linux-headers-generic
-    
+
     - name: Pull and start jenkins container
       docker_container:
         name: jenkins
@@ -87,17 +87,17 @@
     - name: Import GPG keys
       apt_key:
         url: "{{ item }}"
-      with_items:   
+      with_items:
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
         - https://apt.enpass.io/keys/enpass-linux.key
- 
+
     - name: Add apt repos 
       apt_repository:
         repo: "{{ item.value }}"
         filename: "{{ item.key }}"
       loop: "{{ lookup ('dict', repos) }}"
-            
+
     - name: Install non standard packages
       apt:
         name: "{{ item.key }}"
@@ -130,7 +130,7 @@
         dest: /usr/bin
         mode: '755'
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
-    
+
     - name: fetch VS Code extensions
       become: yes
       become_user: "{{ non_sudo_user }}"
@@ -179,13 +179,13 @@
         group: "{{ non_sudo_user }}"
         mode: '0644'
       when: st.stat.exists == false
-     
+
     - name: Increase watch limit for VSCode
       lineinfile:
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
-    
+
     - name: Cleanup apt
       apt:
         autoremove: yes
