@@ -176,7 +176,7 @@
 
     - name: Copy vscode settings.json
       copy:
-        src: ./settings.json
+        src: ./conf/settings.json
         dest: "{{ vscode_settings }}"
         owner: "{{ non_sudo_user }}"
         group: "{{ non_sudo_user }}"
