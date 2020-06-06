@@ -78,6 +78,7 @@
       async: 600
       poll: 0
       register: jenkins_container
+      notify: Sleep if Jenkins container is fresh
 
     # vagrant depends on virtualbox
     - name: Install Vagrant
