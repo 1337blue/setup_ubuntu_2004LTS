@@ -92,7 +92,7 @@
         - https://deb.opera.com/archive.key
         - https://apt.enpass.io/keys/enpass-linux.key
 
-    - name: Add apt repos 
+    - name: Add apt repos
       apt_repository:
         repo: "{{ item.value }}"
         filename: "{{ item.key }}"
@@ -145,7 +145,7 @@
       with_items:
       - DavidAnson.vscode-markdownlint
       - dbaeumer.vscode-eslint
-      - eamodio.gitlens 
+      - eamodio.gitlens
       - HookyQR.beautify
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
@@ -178,7 +178,7 @@
         owner: "{{ non_sudo_user }}"
         group: "{{ non_sudo_user }}"
         mode: '0644'
-      when: st.stat.exists == false
+      when: not st.stat.exists
 
     - name: Increase watch limit for VSCode
       lineinfile:
@@ -198,12 +198,12 @@
 
     - name: Sleep if Jenkins container is fresh
       command: sleep 10
-      when: jenkins_docker_result.changed == True
+      when: jenkins_docker_result.changed
 
     - name: Get jenkins admin pw
       command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
       register: jenkins_admin_pw
 
     - name: Print jenkins admin pw
-      debug: 
+      debug:
         msg: 'Jenkins Admin PW: {{ jenkins_admin_pw.stdout_lines[0] }}'
