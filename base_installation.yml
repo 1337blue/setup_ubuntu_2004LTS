@@ -34,6 +34,7 @@
         value: "{{ git_email }}"
       when:
         - '"user.email" not in output.config_values'
+        - '"@" in git_email'
     
     - name: Add git user name
       git_config:
@@ -42,6 +43,7 @@
         value: "{{ git_username }}"
       when:
         - '"user.name" not in output.config_values'
+        - '{{ git_username|length }} > 1'
 
     - name: Upgrade Packages
       apt:
