@@ -57,12 +57,11 @@
         - docker-compose
         - docker.io
         - jq
-        - software-properties-common 
+        - software-properties-common
         - apt-transport-https
         - wget
         - net-tools
         - vim
-        - xvnc4viewer
         - htop
         - tree
         - iotop
@@ -149,7 +148,7 @@
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
-      - mauve.terraform
+      - hashicorp.terraform
       - mhutchie.git-graph
       - ms-python.python
       - ms-azuretools.vscode-docker
