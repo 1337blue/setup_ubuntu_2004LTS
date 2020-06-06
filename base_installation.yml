@@ -114,9 +114,10 @@
         classic: yes
 
     - name: Is latest terraform installed?
-      shell: terraform -v
+      command: terraform -v
       register: is_terraform_installed
       ignore_errors: yes
+      changed_when: not is_terraform_installed.rc == 0
 
     - name: Download terraform binary
       get_url:
