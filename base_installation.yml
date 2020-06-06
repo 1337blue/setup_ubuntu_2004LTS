@@ -20,20 +20,12 @@
         state: directory
         mode: '755'
 
-    - name: Check git config
-      git_config:
-        list_all: yes
-      register: output
-      become: yes
-      become_user: "{{ non_sudo_user }}"
-
     - name: Add git email
       git_config:
         name: user.email
         scope: system
         value: "{{ git_email }}"
       when:
-        - '"user.email" not in output.config_values'
         - '"@" in git_email'
 
     - name: Add git user name
@@ -42,8 +34,7 @@
         scope: system
         value: "{{ git_username }}"
       when:
-        - '"user.name" not in output.config_values'
-        - '{{ git_username|length }} > 1'
+        - 'git_username|length > 1'
 
     - name: Upgrade Packages
       apt:
