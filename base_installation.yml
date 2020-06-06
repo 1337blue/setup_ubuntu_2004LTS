@@ -3,8 +3,8 @@
   vars:
     terraform_version: 0.12.25
     slack_version: 4.0.0
-    git_email: -
-    git_username: -
+    git_email: x
+    git_username: x
     non_sudo_user: ubuntu
     tmp_dir: /tmp/ansible
     vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
