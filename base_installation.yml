@@ -1,7 +1,53 @@
 - name: Setup working environment
   hosts: localhost
+  vars:
+    terraform_version: 0.12.25
+    slack_version: 4.0.0
+    git_email: -
+    git_username: -
+    non_sudo_user: ubuntu
+    tmp_dir: /tmp/ansible
+    vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
+    repos:
+      enpass: deb https://apt.enpass.io/ stable main
+      opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
+      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
 
   tasks:
+    - name: Create tmp dir
+      file:
+        path: "{{ tmp_dir }}"
+        state: directory
+        mode: '755'
+
+    - name: Check git config
+      git_config:
+        list_all: yes
+      register: output
+      become: yes
+      become_user: "{{ non_sudo_user }}"
+
+    - name: Add git email
+      git_config:
+        name: user.email
+        scope: system
+        value: "{{ git_email }}"
+      when:
+        - '"user.email" not in output.config_values'
+    
+    - name: Add git user name
+      git_config:
+        name: user.name
+        scope: system
+        value: "{{ git_username }}"
+      when:
+        - '"user.name" not in output.config_values'
+
+    - name: Upgrade Packages
+      apt:
+       update_cache: yes
+       upgrade: full
+
     - name: Install Packages
       apt:
         name: "{{ packages }}"
@@ -19,46 +65,86 @@
         - xvnc4viewer
         - htop
         - tree
+        - iotop
+        - virtualbox
+        - linux-headers-generic
+    
+    - name: Pull and start jenkins container
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        ports: 8080:8080
+      async: 600
+      poll: 0
+      register: jenkins_container
 
-    - name: Import Opera GPG keys
+    # vagrant depends on virtualbox
+    - name: Install Vagrant
+      apt:
+        name: vagrant
+
+    - name: Import GPG keys
       apt_key:
-        url: https://deb.opera.com/archive.key
+        url: "{{ item }}"
+      with_items:   
+        - https://packages.microsoft.com/keys/microsoft.asc
+        - https://deb.opera.com/archive.key
+        - https://apt.enpass.io/keys/enpass-linux.key
  
-    - name: Enable Opera repo
+    - name: Add apt repos 
       apt_repository:
-        repo: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
- 
-    - name: Import MS GPG key
-      apt_key:
-        url: https://packages.microsoft.com/keys/microsoft.asc
- 
-    - name: Enable VS Code repo
-      apt_repository:
-        repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
- 
+        repo: "{{ item.value }}"
+        filename: "{{ item.key }}"
+      loop: "{{ lookup ('dict', repos) }}"
+            
     - name: Install non standard packages
       apt:
-        name: "{{ packages }}"
-      vars:
-        packages:   
-        - code
-        - opera-stable
+        name: "{{ item.key }}"
+      when: not item.key == "vscode"
+      loop: "{{ lookup ('dict', repos) }}"
+
+    - name: Install the special kid
+      apt:
+        name: code
+
+    - name: Install Slack
+      snap:
+        name: slack
+        classic: yes
+
+    - name: Is latest terraform installed?
+      shell: terraform -v
+      register: is_terraform_installed
+      ignore_errors: yes
+
+    - name: Download terraform binary
+      get_url:
+        url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip
+        dest: "{{ tmp_dir }}"
+      when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
+
+    - name: Install terraform
+      unarchive:
+        src: "{{ tmp_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+        dest: /usr/bin
+        mode: '755'
+      when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
     
     - name: fetch VS Code extensions
       become: yes
-      become_user: ubuntu
+      become_user: "{{ non_sudo_user }}"
       shell: code --list-extensions
       register: vs_code_extensions
 
     - name: Install VS Code extensions
       become: yes
-      become_user: ubuntu
+      become_user: "{{ non_sudo_user }}"
       shell: code --install-extension "{{ item }}"
       when: item not in vs_code_extensions.stdout
       with_items:
       - DavidAnson.vscode-markdownlint
       - dbaeumer.vscode-eslint
-      - eamodio.gitlens
+      - eamodio.gitlens 
       - HookyQR.beautify
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
@@ -66,23 +152,57 @@
       - mauve.terraform
       - mhutchie.git-graph
       - ms-python.python
-      - PeterJausovec.vscode-docker
+      - ms-azuretools.vscode-docker
       - redhat.vscode-yaml
       - teledemic.branch-warnings
       - tht13.python
       - vscodevim.vim
 
+    - name: Wait for asynchronous docker job to end
+      async_status:
+        jid: '{{ jenkins_container.ansible_job_id }}'
+      register: jenkins_docker_result
+      until: jenkins_docker_result.finished
+      retries: 30
+
+    - name: Check if vscode settings.json exists
+      stat:
+        path: "{{ vscode_settings }}"
+      register: st
+
+    - name: Copy vscode settings.json
+      copy:
+        src: ./settings.json
+        dest: "{{ vscode_settings }}"
+        owner: "{{ non_sudo_user }}"
+        group: "{{ non_sudo_user }}"
+        mode: '0644'
+      when: st.stat.exists == false
+     
     - name: Increase watch limit for VSCode
       lineinfile:
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
+    
+    - name: Cleanup apt
+      apt:
+        autoremove: yes
+        autoclean: yes
 
-    - name: Create docker usergroup
-      group: 
-        name: docker
-        state: present
+    - name: Cleanup tmp dir
+      file:
+        path: "{{ tmp_dir }}"
+        state: absent
 
-    - name: Add ubuntu to docker usergroup
-      shell: usermod -aG docker ubuntu
+    - name: Sleep if Jenkins container is fresh
+      command: sleep 10
+      when: jenkins_docker_result.changed == True
 
+    - name: Get jenkins admin pw
+      command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
+      register: jenkins_admin_pw
+
+    - name: Print jenkins admin pw
+      debug: 
+        msg: 'Jenkins Admin PW: {{ jenkins_admin_pw.stdout_lines[0] }}'
