@@ -135,13 +135,13 @@
     - name: fetch VS Code extensions
       become: yes
       become_user: "{{ non_sudo_user }}"
-      shell: code --list-extensions
+      command: code --list-extensions
       register: vs_code_extensions
 
     - name: Install VS Code extensions
       become: yes
       become_user: "{{ non_sudo_user }}"
-      shell: code --install-extension "{{ item }}"
+      command: code --install-extension "{{ item }}"
       when: item not in vs_code_extensions.stdout
       with_items:
       - DavidAnson.vscode-markdownlint
