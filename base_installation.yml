@@ -198,6 +198,7 @@
         path: "{{ tmp_dir }}"
         state: absent
 
+  handlers:
     - name: Sleep if Jenkins container is fresh
       command: sleep 10
       when: jenkins_docker_result.changed
