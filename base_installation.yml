@@ -1,0 +1,88 @@
+- name: Setup working environment
+  hosts: localhost
+
+  tasks:
+    - name: Install Packages
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - awscli
+        - docker-compose
+        - docker.io
+        - jq
+        - software-properties-common 
+        - apt-transport-https
+        - wget
+        - net-tools
+        - vim
+        - xvnc4viewer
+        - htop
+        - tree
+
+    - name: Import Opera GPG keys
+      apt_key:
+        url: https://deb.opera.com/archive.key
+ 
+    - name: Enable Opera repo
+      apt_repository:
+        repo: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
+ 
+    - name: Import MS GPG key
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+ 
+    - name: Enable VS Code repo
+      apt_repository:
+        repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+ 
+    - name: Install non standard packages
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:   
+        - code
+        - opera-stable
+    
+    - name: fetch VS Code extensions
+      become: yes
+      become_user: ubuntu
+      shell: code --list-extensions
+      register: vs_code_extensions
+
+    - name: Install VS Code extensions
+      become: yes
+      become_user: ubuntu
+      shell: code --install-extension "{{ item }}"
+      when: item not in vs_code_extensions.stdout
+      with_items:
+      - DavidAnson.vscode-markdownlint
+      - dbaeumer.vscode-eslint
+      - eamodio.gitlens
+      - HookyQR.beautify
+      - janjoerke.jenkins-pipeline-linter-connector
+      - jmMeessen.jenkins-declarative-support
+      - magicstack.MagicPython
+      - mauve.terraform
+      - mhutchie.git-graph
+      - ms-python.python
+      - PeterJausovec.vscode-docker
+      - redhat.vscode-yaml
+      - teledemic.branch-warnings
+      - tht13.python
+      - vscodevim.vim
+
+    - name: Increase watch limit for VSCode
+      lineinfile:
+        path: /etc/sysctl.conf
+        state: present
+        line: fs.inotify.max_user_watches=524288
+
+    - name: Create docker usergroup
+      group: 
+        name: docker
+        state: present
+
+    - name: Add ubuntu to docker usergroup
+      shell: usermod -aG docker ubuntu
+
