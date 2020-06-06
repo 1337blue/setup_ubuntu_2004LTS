@@ -3,8 +3,8 @@
   vars:
     terraform_version: 0.12.25
     slack_version: 4.0.0
-    git_email: -
-    git_username: -
+    git_email: x
+    git_username: x
     non_sudo_user: ubuntu
     tmp_dir: /tmp/ansible
     vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
@@ -34,7 +34,8 @@
         value: "{{ git_email }}"
       when:
         - '"user.email" not in output.config_values'
-    
+        - '"@" in git_email'
+
     - name: Add git user name
       git_config:
         name: user.name
@@ -42,6 +43,7 @@
         value: "{{ git_username }}"
       when:
         - '"user.name" not in output.config_values'
+        - '{{ git_username|length }} > 1'
 
     - name: Upgrade Packages
       apt:
@@ -67,7 +69,7 @@
         - iotop
         - virtualbox
         - linux-headers-generic
-    
+
     - name: Pull and start jenkins container
       docker_container:
         name: jenkins
@@ -76,6 +78,7 @@
       async: 600
       poll: 0
       register: jenkins_container
+      notify: Sleep if Jenkins container is fresh
 
     # vagrant depends on virtualbox
     - name: Install Vagrant
@@ -85,17 +88,17 @@
     - name: Import GPG keys
       apt_key:
         url: "{{ item }}"
-      with_items:   
+      with_items:
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
         - https://apt.enpass.io/keys/enpass-linux.key
- 
-    - name: Add apt repos 
+
+    - name: Add apt repos
       apt_repository:
         repo: "{{ item.value }}"
         filename: "{{ item.key }}"
       loop: "{{ lookup ('dict', repos) }}"
-            
+
     - name: Install non standard packages
       apt:
         name: "{{ item.key }}"
@@ -112,9 +115,10 @@
         classic: yes
 
     - name: Is latest terraform installed?
-      shell: terraform -v
+      command: terraform -v
       register: is_terraform_installed
       ignore_errors: yes
+      changed_when: not is_terraform_installed.rc == 0
 
     - name: Download terraform binary
       get_url:
@@ -128,27 +132,28 @@
         dest: /usr/bin
         mode: '755'
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
-    
+
     - name: fetch VS Code extensions
       become: yes
       become_user: "{{ non_sudo_user }}"
-      shell: code --list-extensions
+      command: code --list-extensions
       register: vs_code_extensions
+      changed_when: false
 
     - name: Install VS Code extensions
       become: yes
       become_user: "{{ non_sudo_user }}"
-      shell: code --install-extension "{{ item }}"
+      command: code --install-extension "{{ item }}"
       when: item not in vs_code_extensions.stdout
       with_items:
       - DavidAnson.vscode-markdownlint
       - dbaeumer.vscode-eslint
-      - eamodio.gitlens 
+      - eamodio.gitlens
       - HookyQR.beautify
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
-      - hashicorp.terraform
+      - mauve.terraform
       - mhutchie.git-graph
       - ms-python.python
       - ms-azuretools.vscode-docker
@@ -176,14 +181,14 @@
         owner: "{{ non_sudo_user }}"
         group: "{{ non_sudo_user }}"
         mode: '0644'
-      when: st.stat.exists == false
-     
+      when: not st.stat.exists
+
     - name: Increase watch limit for VSCode
       lineinfile:
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
-    
+
     - name: Cleanup apt
       apt:
         autoremove: yes
@@ -194,14 +199,17 @@
         path: "{{ tmp_dir }}"
         state: absent
 
+  handlers:
     - name: Sleep if Jenkins container is fresh
       command: sleep 10
-      when: jenkins_docker_result.changed == True
+      when: jenkins_docker_result.changed
+      notify: Get jenkins admin pw
 
     - name: Get jenkins admin pw
       command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
       register: jenkins_admin_pw
+      notify: Print jenkins admin pw
 
     - name: Print jenkins admin pw
-      debug: 
+      debug:
         msg: 'Jenkins Admin PW: {{ jenkins_admin_pw.stdout_lines[0] }}'
