@@ -203,11 +203,13 @@
     - name: Sleep if Jenkins container is fresh
       command: sleep 10
       when: jenkins_docker_result.changed
+      notify: Get jenkins admin pw
 
     - name: Get jenkins admin pw
       command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
       register: jenkins_admin_pw
       changed_when: false
+      notify: Print jenkins admin pw
 
     - name: Print jenkins admin pw
       debug:
