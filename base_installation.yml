@@ -152,7 +152,7 @@
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
-      - mauve.terraform
+      - hashicorp.terraform
       - mhutchie.git-graph
       - ms-python.python
       - ms-azuretools.vscode-docker
