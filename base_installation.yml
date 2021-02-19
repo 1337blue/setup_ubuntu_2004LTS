@@ -5,7 +5,8 @@
     git_email: x
     git_username: 1337blue
     tmp_dir: /tmp/ansible
-    vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
+    username: "{{ lookup ('env', 'USERNAME') }}"
+    vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
     repos:
       enpass: deb https://apt.enpass.io/ stable main
       opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
@@ -39,10 +40,12 @@
       apt:
        update_cache: yes
        upgrade: full
+      become: yes
 
     - name: Install Packages
       apt:
         name: "{{ packages }}"
+      become: yes
       vars:
         packages:
         - ansible-lint
@@ -73,6 +76,7 @@
     - name: Import GPG keys
       apt_key:
         url: "{{ item }}"
+      become: yes
       with_items:
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
@@ -84,11 +88,13 @@
       apt_repository:
         repo: "{{ item.value }}"
         filename: "{{ item.key }}"
+      become: yes
       loop: "{{ lookup ('dict', repos) }}"
 
     - name: Install non standard packages
       apt:
         name: "{{ item.key }}"
+      become: yes
       when: not item.key == "vscode"
       loop: "{{ lookup ('dict', repos) }}"
 
@@ -110,6 +116,7 @@
     - name: Install Vagrant
       apt:
         name: vagrant
+      become: yes
 
     - name: Install Vagrant plugins
       command: vagrant plugin install {{ item }}
@@ -134,18 +141,17 @@
         src: "{{ tmp_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
         dest: /usr/bin
         mode: '755'
+        owner: root
+        group: root
+      become: yes
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
-      become: yes
-      become_user: "{{ non_sudo_user }}"
       command: code --list-extensions
       register: vs_code_extensions
       changed_when: false
 
     - name: Install VS Code extensions
-      become: yes
-      become_user: "{{ non_sudo_user }}"
       command: code --install-extension "{{ item }}"
       when: item not in vs_code_extensions.stdout
       with_items:
@@ -174,8 +180,6 @@
       copy:
         src: ./conf/settings.json
         dest: "{{ vscode_settings }}"
-        owner: "{{ non_sudo_user }}"
-        group: "{{ non_sudo_user }}"
         mode: '0644'
       when: not st.stat.exists
 
@@ -189,8 +193,10 @@
       apt:
         autoremove: yes
         autoclean: yes
+      become: yes
 
     - name: Cleanup tmp dir
       file:
         path: "{{ tmp_dir }}"
         state: absent
+      become: yes
