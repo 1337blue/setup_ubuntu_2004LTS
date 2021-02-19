@@ -18,7 +18,7 @@
       file:
         path: "{{ tmp_dir }}"
         state: directory
-        mode: '755'
+        mode: '0755'
 
     - name: Add git email
       git_config:
@@ -134,7 +134,7 @@
       unarchive:
         src: "{{ tmp_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
         dest: /usr/bin
-        mode: '755'
+        mode: '0755'
         owner: root
         group: root
       become: yes
