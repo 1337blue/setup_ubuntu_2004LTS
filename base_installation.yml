@@ -118,12 +118,6 @@
         name: vagrant
       become: yes
 
-    - name: Install Vagrant plugins
-      command: vagrant plugin install {{ item }}
-      with_items:
-        - vagrant-aws
-      changed_when: False
-
     - name: Is latest terraform installed?
       command: terraform -v
       register: is_terraform_installed
