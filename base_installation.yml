@@ -49,29 +49,29 @@
       vars:
         packages:
         - ansible-lint
+        - apt-transport-https
         - awscli
+        - build-essential
         - docker-compose
         - docker.io
-        - jq
-        - software-properties-common
-        - apt-transport-https
-        - wget
-        - net-tools
-        - vim
         - htop
-        - tree
         - iotop
-        - linux-headers-generic
-        - openvpn
-        - ruby-dev
-        - ruby-libxml
-        - build-essential
-        - patch
-        - zlib1g-dev
+        - jq
+        - keepassxc
+        - net-tools
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
-        - keepassxc
+        - linux-headers-generic
+        - openvpn
+        - patch
+        - ruby-dev
+        - ruby-libxml
+        - software-properties-common
+        - tree
+        - vim
+        - wget
+        - zlib1g-dev
 
     - name: Import GPG keys
       apt_key:
@@ -152,11 +152,11 @@
       - DavidAnson.vscode-markdownlint
       - dbaeumer.vscode-eslint
       - eamodio.gitlens
+      - hashicorp.terraform
       - HookyQR.beautify
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
-      - hashicorp.terraform
       - mhutchie.git-graph
       - ms-python.python
       - ms-azuretools.vscode-docker
