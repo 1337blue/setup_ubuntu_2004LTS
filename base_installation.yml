@@ -4,7 +4,6 @@
     terraform_version: 0.12.29
     git_email: x
     git_username: 1337blue
-    non_sudo_user: "{{ lookup ('env', 'SUDO_USER') }}"
     tmp_dir: /tmp/ansible
     vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
     repos:
@@ -70,16 +69,6 @@
         - libxml2-dev
         - libcurl4-openssl-dev
 
-    - name: Pull and start jenkins container
-      docker_container:
-        name: jenkins
-        image: jenkins/jenkins:lts
-        ports: 8080:8080
-      async: 600
-      poll: 0
-      register: jenkins_container
-      notify: Sleep if Jenkins container is fresh
-
     - name: Import GPG keys
       apt_key:
         url: "{{ item }}"
@@ -108,7 +97,7 @@
         - code
         - virtualbox-6.1
 
-    - name: Install Snaps apps
+    - name: Install Snap apps
       snap:
         name: "{{ item }}"
         classic: yes
@@ -175,13 +164,6 @@
       - tht13.python
       - vscodevim.vim
 
-    - name: Wait for asynchronous docker job to end
-      async_status:
-        jid: '{{ jenkins_container.ansible_job_id }}'
-      register: jenkins_docker_result
-      until: jenkins_docker_result.finished
-      retries: 30
-
     - name: Check if vscode settings.json exists
       stat:
         path: "{{ vscode_settings }}"
@@ -211,18 +193,3 @@
       file:
         path: "{{ tmp_dir }}"
         state: absent
-
-  handlers:
-    - name: Sleep if Jenkins container is fresh
-      command: sleep 10
-      when: jenkins_docker_result.changed
-      notify: Get jenkins admin pw
-
-    - name: Get jenkins admin pw
-      command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
-      register: jenkins_admin_pw
-      notify: Print jenkins admin pw
-
-    - name: Print jenkins admin pw
-      debug:
-        msg: 'Jenkins Admin PW: {{ jenkins_admin_pw.stdout_lines[0] }}'
