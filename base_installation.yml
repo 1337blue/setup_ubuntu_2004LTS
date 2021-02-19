@@ -9,8 +9,8 @@
     repos:
       enpass: deb https://apt.enpass.io/ stable main
       opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
-      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
       virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
+      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
 
   tasks:
     - name: Create tmp dir
@@ -68,6 +68,7 @@
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
+        - keepassxc
 
     - name: Import GPG keys
       apt_key:
