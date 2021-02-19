@@ -1,8 +1,8 @@
 - name: Setup working environment
   hosts: localhost
   vars:
-    terraform_version: 0.12.25
-    git_email: phillip.lichtblau@gmx.de
+    terraform_version: 0.12.29
+    git_email: x
     git_username: 1337blue
     non_sudo_user: "{{ lookup ('env', 'SUDO_USER') }}"
     tmp_dir: /tmp/ansible
