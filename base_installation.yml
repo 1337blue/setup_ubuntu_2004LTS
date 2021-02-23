@@ -7,21 +7,21 @@
     vagrant_version: 2.2.10
     git_email: x
     git_username: 1337blue
-    non_sudo_user: "{{ lookup ('env', 'SUDO_USER') }}"
     tmp_dir: /tmp/ansible
-    vscode_settings: /home/{{ non_sudo_user }}/.config/Code/User/settings.json
+    username: "{{ lookup ('env', 'USERNAME') }}"
+    vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
     repos:
       enpass: deb https://apt.enpass.io/ stable main
       opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
-      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
       virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
+      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
 
   tasks:
     - name: Create tmp dir
       file:
         path: "{{ tmp_dir }}"
         state: directory
-        mode: '755'
+        mode: '0755'
 
     - name: Add git email
       git_config:
@@ -43,45 +43,47 @@
       apt:
        update_cache: yes
        upgrade: full
+      become: yes
 
     - name: Install Packages
       apt:
         name: "{{ packages }}"
+      become: yes
       vars:
         packages:
         - ansible-lint
+        - apt-transport-https
         - awscli
+        - build-essential
         - docker-compose
         - docker.io
-        - jq
-        - software-properties-common
-        - apt-transport-https
-        - wget
-        - net-tools
-        - vim
+        - golang-go
+        - hddtemp
         - htop
-        - tree
         - iotop
-        - linux-headers-generic
-        - openvpn
-        - ruby-dev
-        - ruby-libxml
-        - build-essential
-        - patch
-        - zlib1g-dev
+        - jq
+        - keepassxc
+        - net-tools
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
-        - golang-go
-        - redis-tools
+        - linux-headers-generic
         - lm-sensors
-        - hddtemp
+        - openvpn
+        - patch
+        - ruby-dev
+        - ruby-libxml
         - smartmontools
-        - keepassxc
+        - software-properties-common
+        - tree
+        - vim
+        - wget
+        - zlib1g-dev
 
     - name: Import GPG keys
       apt_key:
         url: "{{ item }}"
+      become: yes
       with_items:
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
@@ -93,11 +95,13 @@
       apt_repository:
         repo: "{{ item.value }}"
         filename: "{{ item.key }}"
+      become: yes
       loop: "{{ lookup ('dict', repos) }}"
 
     - name: Install non standard packages
       apt:
         name: "{{ item.key }}"
+      become: yes
       when: not item.key == "vscode"
       loop: "{{ lookup ('dict', repos) }}"
 
@@ -111,14 +115,18 @@
       snap:
         name: "{{ item }}"
         classic: yes
+      become: yes
       with_items:
         - 1password-linux
-        - slack
+        - kubectl
         - notepad-plus-plus
+        - slack
 
+    # vagrant depends on virtualbox
     - name: Install vagrant
       apt:
         deb: https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
+      become: yes
 
     - name: Is latest terraform installed?
       command: terraform -v
@@ -136,7 +144,10 @@
       unarchive:
         src: "{{ tmp_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
         dest: /usr/bin
-        mode: '755'
+        mode: '0755'
+        owner: root
+        group: root
+      become: yes
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
 
     - name: Is tflint installed?
@@ -156,6 +167,9 @@
         src: "{{ tmp_dir }}/tflint_linux_amd64.zip"
         dest: /usr/bin
         mode: '755'
+        owner: root
+        group: root
+      become: yes
       when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
 
     - name: Is terraform-docs installed?
@@ -172,26 +186,22 @@
       when: (not is_terraform_docs_installed.rc == 0 or not terraform_docs_version in is_terraform_docs_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
-      become: yes
-      become_user: "{{ non_sudo_user }}"
       command: code --list-extensions
       register: vs_code_extensions
       changed_when: false
 
     - name: Install VS Code extensions
-      become: yes
-      become_user: "{{ non_sudo_user }}"
       command: code --install-extension "{{ item }}"
       when: item not in vs_code_extensions.stdout
       with_items:
       - DavidAnson.vscode-markdownlint
       - dbaeumer.vscode-eslint
       - eamodio.gitlens
+      - hashicorp.terraform
       - HookyQR.beautify
       - janjoerke.jenkins-pipeline-linter-connector
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
-      - hashicorp.terraform
       - mhutchie.git-graph
       - ms-python.python
       - ms-azuretools.vscode-docker
@@ -209,8 +219,6 @@
       copy:
         src: ./conf/settings.json
         dest: "{{ vscode_settings }}"
-        owner: "{{ non_sudo_user }}"
-        group: "{{ non_sudo_user }}"
         mode: '0644'
       when: not st.stat.exists
 
@@ -224,8 +232,10 @@
       apt:
         autoremove: yes
         autoclean: yes
+      become: yes
 
     - name: Cleanup tmp dir
       file:
         path: "{{ tmp_dir }}"
         state: absent
+      become: yes
