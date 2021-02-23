@@ -1,7 +1,10 @@
 - name: Setup working environment
   hosts: localhost
   vars:
-    terraform_version: 0.12.25
+    terraform_version: 0.12.29
+    tflint_version: 0.20.3
+    terraform_docs_version: 0.10.1
+    vagrant_version: 2.2.10
     git_email: phillip.lichtblau@gmx.de
     git_username: 1337blue
     non_sudo_user: "{{ lookup ('env', 'SUDO_USER') }}"
@@ -69,16 +72,12 @@
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
-
-    - name: Pull and start jenkins container
-      docker_container:
-        name: jenkins
-        image: jenkins/jenkins:lts
-        ports: 8080:8080
-      async: 600
-      poll: 0
-      register: jenkins_container
-      notify: Sleep if Jenkins container is fresh
+        - golang-go
+        - redis-tools
+        - lm-sensors
+        - hddtemp
+        - smartmontools
+        - keepassxc
 
     - name: Import GPG keys
       apt_key:
@@ -108,24 +107,18 @@
         - code
         - virtualbox-6.1
 
-    - name: Install Snaps apps
+    - name: Install Snap apps
       snap:
         name: "{{ item }}"
         classic: yes
       with_items:
         - 1password-linux
         - slack
+        - notepad-plus-plus
 
-    # vagrant depends on virtualbox
-    - name: Install Vagrant
+    - name: Install vagrant
       apt:
-        name: vagrant
-
-    - name: Install Vagrant plugins
-      command: vagrant plugin install {{ item }}
-      with_items:
-        - vagrant-aws
-      changed_when: False
+        deb: https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
 
     - name: Is latest terraform installed?
       command: terraform -v
@@ -145,6 +138,38 @@
         dest: /usr/bin
         mode: '755'
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
+
+    - name: Is tflint installed?
+      command: tflint -v
+      register: is_tflint_installed
+      ignore_errors: yes
+      changed_when: not is_tflint_installed.rc == 0
+
+    - name: Download tflint binary
+      get_url:
+        url: https://github.com/terraform-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip
+        dest: "{{ tmp_dir }}"
+      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+
+    - name: Unzip tflint
+      unarchive:
+        src: "{{ tmp_dir }}/tflint_linux_amd64.zip"
+        dest: /usr/bin
+        mode: '755'
+      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+
+    - name: Is terraform-docs installed?
+      command: terraform-docs -v
+      register: is_terraform_docs_installed
+      ignore_errors: yes
+      changed_when: not is_terraform_docs_installed.rc == 0
+
+    - name: Download terraform-docs binary
+      get_url:
+        url: https://github.com/terraform-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64
+        dest: /usr/bin/terraform-docs
+        mode: '755'
+      when: (not is_terraform_docs_installed.rc == 0 or not terraform_docs_version in is_terraform_docs_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
       become: yes
@@ -175,13 +200,6 @@
       - tht13.python
       - vscodevim.vim
 
-    - name: Wait for asynchronous docker job to end
-      async_status:
-        jid: '{{ jenkins_container.ansible_job_id }}'
-      register: jenkins_docker_result
-      until: jenkins_docker_result.finished
-      retries: 30
-
     - name: Check if vscode settings.json exists
       stat:
         path: "{{ vscode_settings }}"
@@ -211,18 +229,3 @@
       file:
         path: "{{ tmp_dir }}"
         state: absent
-
-  handlers:
-    - name: Sleep if Jenkins container is fresh
-      command: sleep 10
-      when: jenkins_docker_result.changed
-      notify: Get jenkins admin pw
-
-    - name: Get jenkins admin pw
-      command: 'docker exec -i jenkins cat /var/jenkins_home/secrets/initialAdminPassword'
-      register: jenkins_admin_pw
-      notify: Print jenkins admin pw
-
-    - name: Print jenkins admin pw
-      debug:
-        msg: 'Jenkins Admin PW: {{ jenkins_admin_pw.stdout_lines[0] }}'
