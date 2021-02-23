@@ -5,7 +5,7 @@
     tflint_version: 0.20.3
     terraform_docs_version: 0.10.1
     vagrant_version: 2.2.10
-    git_email: phillip.lichtblau@gmx.de
+    git_email: x
     git_username: 1337blue
     non_sudo_user: "{{ lookup ('env', 'SUDO_USER') }}"
     tmp_dir: /tmp/ansible
