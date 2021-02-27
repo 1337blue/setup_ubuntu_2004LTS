@@ -25,6 +25,7 @@
         name: user.email
         scope: system
         value: "{{ git_email }}"
+      become: yes
       when:
         - '"@" in git_email'
 
@@ -33,6 +34,7 @@
         name: user.name
         scope: system
         value: "{{ git_username }}"
+      become: yes
       when:
         - 'git_username|length > 1'
 
@@ -99,12 +101,14 @@
       loop: "{{ lookup ('dict', repos) }}"
 
     - name: Install the special kids
+      become: yes
       apt:
         name:
         - code
         - virtualbox-6.1
 
     - name: Install Snap apps
+      become: yes
       snap:
         name: "{{ item }}"
         classic: yes
@@ -178,6 +182,7 @@
       when: not st.stat.exists
 
     - name: Increase watch limit for VSCode
+      become: yes
       lineinfile:
         path: /etc/sysctl.conf
         state: present
