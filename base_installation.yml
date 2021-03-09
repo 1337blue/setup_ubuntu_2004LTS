@@ -8,6 +8,7 @@
     git_email: x
     git_username: 1337blue
     tmp_dir: /tmp/ansible
+    setup_open_ssh_server: false
     username: "{{ lookup ('env', 'USERNAME') }}"
     vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
     repos:
@@ -28,6 +29,7 @@
         name: user.email
         scope: system
         value: "{{ git_email }}"
+      become: yes
       when:
         - '"@" in git_email'
 
@@ -36,6 +38,7 @@
         name: user.name
         scope: system
         value: "{{ git_username }}"
+      become: yes
       when:
         - 'git_username|length > 1'
 
@@ -63,12 +66,13 @@
         - iotop
         - jq
         - keepassxc
-        - net-tools
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
         - linux-headers-generic
         - lm-sensors
+        - net-tools
+        - openssh-server
         - openvpn
         - patch
         - ruby-dev
@@ -79,6 +83,17 @@
         - vim
         - wget
         - zlib1g-dev
+
+    - name: Allow SSH password authentication
+      become: yes
+      lineinfile:
+        state: present
+        regexp: '.*PasswordAuthentication.*'
+        line: 'PasswordAuthentication yes'
+        path: /etc/ssh/sshd_config
+        validate: sshd -t -f %s
+      notify: Enable and restart sshd
+      when: setup_open_ssh_server | bool
 
     - name: Import GPG keys
       apt_key:
@@ -106,6 +121,7 @@
       loop: "{{ lookup ('dict', repos) }}"
 
     - name: Install the special kids
+      become: yes
       apt:
         name:
         - code
@@ -126,6 +142,18 @@
     - name: Install vagrant
       apt:
         deb: https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
+      become: yes
+      snap:
+        name: "{{ item }}"
+        classic: yes
+      with_items:
+        - 1password-linux
+        - slack
+
+    # vagrant depends on virtualbox
+    - name: Install Vagrant
+      apt:
+        name: vagrant
       become: yes
 
     - name: Is latest terraform installed?
@@ -223,6 +251,7 @@
       when: not st.stat.exists
 
     - name: Increase watch limit for VSCode
+      become: yes
       lineinfile:
         path: /etc/sysctl.conf
         state: present
@@ -239,3 +268,12 @@
         path: "{{ tmp_dir }}"
         state: absent
       become: yes
+
+  handlers:
+    - name: Enable and restart sshd
+      become: yes
+      service:
+        name: sshd
+        enabled: yes
+        state: restarted
+
