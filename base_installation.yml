@@ -9,7 +9,7 @@
     git_username: 1337blue
     tmp_dir: /tmp/ansible
     setup_open_ssh_server: false
-    username: "{{ lookup ('env', 'USERNAME') }}"
+    username: "{{ lookup ('env', 'USER') }}"
     vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
     repos:
       enpass: deb https://apt.enpass.io/ stable main
@@ -143,12 +143,6 @@
       apt:
         deb: https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
       become: yes
-      snap:
-        name: "{{ item }}"
-        classic: yes
-      with_items:
-        - 1password-linux
-        - slack
 
     # vagrant depends on virtualbox
     - name: Install Vagrant
@@ -211,6 +205,7 @@
         url: https://github.com/terraform-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64
         dest: /usr/bin/terraform-docs
         mode: '755'
+      become: yes
       when: (not is_terraform_docs_installed.rc == 0 or not terraform_docs_version in is_terraform_docs_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
