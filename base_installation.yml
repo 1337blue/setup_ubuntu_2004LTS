@@ -1,12 +1,16 @@
 - name: Setup working environment
   hosts: localhost
   vars:
+    gh_tf: https://github.com/terraform
     terraform_version: 0.12.29
+    tflint_version: 0.20.3
+    terraform_docs_version: 0.10.1
+    vagrant_version: 2.2.10
     git_email: x
     git_username: 1337blue
     tmp_dir: /tmp/ansible
     setup_open_ssh_server: false
-    username: "{{ lookup ('env', 'USERNAME') }}"
+    username: "{{ lookup ('env', 'USER') }}"
     vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
     repos:
       enpass: deb https://apt.enpass.io/ stable main
@@ -57,20 +61,24 @@
         - build-essential
         - docker-compose
         - docker.io
+        - golang-go
+        - hddtemp
         - htop
         - iotop
         - jq
         - keepassxc
-        - net-tools
         - liblzma-dev
         - libxml2-dev
         - libcurl4-openssl-dev
         - linux-headers-generic
+        - lm-sensors
+        - net-tools
         - openssh-server
         - openvpn
         - patch
         - ruby-dev
         - ruby-libxml
+        - smartmontools
         - software-properties-common
         - tree
         - vim
@@ -87,7 +95,6 @@
         validate: sshd -t -f %s
       notify: Enable and restart sshd
       when: setup_open_ssh_server | bool
-
 
     - name: Import GPG keys
       apt_key:
@@ -122,13 +129,21 @@
         - virtualbox-6.1
 
     - name: Install Snap apps
-      become: yes
       snap:
         name: "{{ item }}"
         classic: yes
+      become: yes
       with_items:
         - 1password-linux
+        - kubectl
+        - notepad-plus-plus
         - slack
+
+    # vagrant depends on virtualbox
+    - name: Install vagrant
+      apt:
+        deb: https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
+      become: yes
 
     # vagrant depends on virtualbox
     - name: Install Vagrant
@@ -157,6 +172,42 @@
         group: root
       become: yes
       when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
+
+    - name: Is tflint installed?
+      command: tflint -v
+      register: is_tflint_installed
+      ignore_errors: yes
+      changed_when: not is_tflint_installed.rc == 0
+
+    - name: Download tflint binary
+      get_url:
+        url: "{{ gt_tf }}-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip"
+        dest: "{{ tmp_dir }}"
+      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+
+    - name: Unzip tflint
+      unarchive:
+        src: "{{ tmp_dir }}/tflint_linux_amd64.zip"
+        dest: /usr/bin
+        mode: '0755'
+        owner: root
+        group: root
+      become: yes
+      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+
+    - name: Is terraform-docs installed?
+      command: terraform-docs -v
+      register: is_terraform_docs_installed
+      ignore_errors: yes
+      changed_when: not is_terraform_docs_installed.rc == 0
+
+    - name: Download terraform-docs binary
+      get_url:
+        url: "{{ gh_tf }}-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64"
+        dest: /usr/bin/terraform-docs
+        mode: '0755'
+      become: yes
+      when: (not is_terraform_docs_installed.rc == 0 or not terraform_docs_version in is_terraform_docs_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
       command: code --list-extensions
