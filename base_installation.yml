@@ -1,6 +1,7 @@
 - name: Setup working environment
   hosts: localhost
   vars:
+    gh_tf: https://github.com/terraform
     terraform_version: 0.12.29
     tflint_version: 0.20.3
     terraform_docs_version: 0.10.1
@@ -180,7 +181,7 @@
 
     - name: Download tflint binary
       get_url:
-        url: https://github.com/terraform-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip
+        url: "{{ gt_tf }}-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip"
         dest: "{{ tmp_dir }}"
       when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
 
@@ -202,7 +203,7 @@
 
     - name: Download terraform-docs binary
       get_url:
-        url: https://github.com/terraform-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64
+        url: "{{ gh_tf }}-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64"
         dest: /usr/bin/terraform-docs
         mode: '0755'
       become: yes
