@@ -59,7 +59,6 @@
         - apt-transport-https
         - awscli
         - build-essential
-        - docker-compose
         - docker.io
         - golang-go
         - hddtemp
@@ -84,6 +83,12 @@
         - vim
         - wget
         - zlib1g-dev
+
+    - name: Install pip packages
+      pip:
+        name:
+          - docker-compose
+          - yq
 
     - name: Allow SSH password authentication
       become: yes
