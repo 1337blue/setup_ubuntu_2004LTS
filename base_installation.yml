@@ -254,11 +254,11 @@
         state: present
         gid: 1750
 
-    - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    - name: Append the user to "docker" group
       ansible.builtin.user:
         name: "{{ username }}"
-        uid: 1000
-        group: docker
+        groups: docker
+        append: yes
 
     - name: Allow SSH password authentication
       become: yes
