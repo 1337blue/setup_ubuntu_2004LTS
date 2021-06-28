@@ -90,6 +90,18 @@
           - docker-compose
           - yq
 
+    - name: Ensure group "docker" exists with correct gid
+      ansible.builtin.group:
+        name: docker
+        state: present
+        gid: 1750
+
+    - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+      ansible.builtin.user:
+        name: {{ lookup('env', 'USER') }}
+        uid: 1000
+        group: docker
+
     - name: Allow SSH password authentication
       become: yes
       lineinfile:
