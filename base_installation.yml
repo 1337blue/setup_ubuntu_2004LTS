@@ -1,8 +1,8 @@
 - name: Setup working environment
   hosts: localhost
   vars:
-    gh_tf: https://github.com/terraform
-    terraform_version: 0.12.29
+    github_terraform: https://github.com/terraform
+    terraform_version: 0.13.7
     tflint_version: 0.20.3
     terraform_docs_version: 0.10.1
     vagrant_version: 2.2.10
@@ -41,7 +41,7 @@
         value: "{{ git_username }}"
       become: yes
       when:
-        - 'git_username|length > 1'
+        - 'git_username | length > 1'
 
     - name: Upgrade Packages
       apt:
@@ -59,7 +59,6 @@
         - apt-transport-https
         - awscli
         - build-essential
-        - docker-compose
         - docker.io
         - golang-go
         - hddtemp
@@ -76,6 +75,7 @@
         - openssh-server
         - openvpn
         - patch
+        - python3-pip
         - ruby-dev
         - ruby-libxml
         - smartmontools
@@ -85,16 +85,11 @@
         - wget
         - zlib1g-dev
 
-    - name: Allow SSH password authentication
-      become: yes
-      lineinfile:
-        state: present
-        regexp: '.*PasswordAuthentication.*'
-        line: 'PasswordAuthentication yes'
-        path: /etc/ssh/sshd_config
-        validate: sshd -t -f %s
-      notify: Enable and restart sshd
-      when: setup_open_ssh_server | bool
+    - name: Install pip packages
+      pip:
+        name:
+          - docker-compose
+          - yq
 
     - name: Import GPG keys
       apt_key:
@@ -181,7 +176,7 @@
 
     - name: Download tflint binary
       get_url:
-        url: "{{ gt_tf }}-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip"
+        url: "{{ github_terraform }}-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip"
         dest: "{{ tmp_dir }}"
       when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
 
@@ -203,7 +198,7 @@
 
     - name: Download terraform-docs binary
       get_url:
-        url: "{{ gh_tf }}-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64"
+        url: "{{ github_terraform }}-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64"
         dest: /usr/bin/terraform-docs
         mode: '0755'
       become: yes
@@ -252,6 +247,31 @@
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
+
+    - name: Ensure group "docker" exists with correct gid
+      ansible.builtin.group:
+        name: docker
+        state: present
+        gid: 1750
+      become: yes
+
+    - name: Append the user to "docker" group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes
+      become: yes
+
+    - name: Allow SSH password authentication
+      become: yes
+      lineinfile:
+        state: present
+        regexp: '.*PasswordAuthentication.*'
+        line: 'PasswordAuthentication yes'
+        path: /etc/ssh/sshd_config
+        validate: sshd -t -f %s
+      notify: Enable and restart sshd
+      when: setup_open_ssh_server | bool
 
     - name: Cleanup apt
       apt:
