@@ -41,7 +41,7 @@
         value: "{{ git_username }}"
       become: yes
       when:
-        - 'git_username|length > 1'
+        - 'git_username | length > 1'
 
     - name: Upgrade Packages
       apt:
