@@ -75,7 +75,7 @@
         - openssh-server
         - openvpn
         - patch
-        - python-pip3
+        - python3-pip
         - ruby-dev
         - ruby-libxml
         - smartmontools
@@ -90,29 +90,6 @@
         name:
           - docker-compose
           - yq
-
-    - name: Ensure group "docker" exists with correct gid
-      ansible.builtin.group:
-        name: docker
-        state: present
-        gid: 1750
-
-    - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
-      ansible.builtin.user:
-        name: "{{ username }}"
-        uid: 1000
-        group: docker
-
-    - name: Allow SSH password authentication
-      become: yes
-      lineinfile:
-        state: present
-        regexp: '.*PasswordAuthentication.*'
-        line: 'PasswordAuthentication yes'
-        path: /etc/ssh/sshd_config
-        validate: sshd -t -f %s
-      notify: Enable and restart sshd
-      when: setup_open_ssh_server | bool
 
     - name: Import GPG keys
       apt_key:
@@ -270,6 +247,29 @@
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
+
+    - name: Ensure group "docker" exists with correct gid
+      ansible.builtin.group:
+        name: docker
+        state: present
+        gid: 1750
+
+    - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+      ansible.builtin.user:
+        name: "{{ username }}"
+        uid: 1000
+        group: docker
+
+    - name: Allow SSH password authentication
+      become: yes
+      lineinfile:
+        state: present
+        regexp: '.*PasswordAuthentication.*'
+        line: 'PasswordAuthentication yes'
+        path: /etc/ssh/sshd_config
+        validate: sshd -t -f %s
+      notify: Enable and restart sshd
+      when: setup_open_ssh_server | bool
 
     - name: Cleanup apt
       apt:
