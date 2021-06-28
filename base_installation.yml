@@ -75,6 +75,7 @@
         - openssh-server
         - openvpn
         - patch
+        - python-pip3
         - ruby-dev
         - ruby-libxml
         - smartmontools
