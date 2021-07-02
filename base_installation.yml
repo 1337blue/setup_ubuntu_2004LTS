@@ -1,19 +1,22 @@
 - name: Setup working environment
   hosts: localhost
   vars:
-    github_terraform: https://github.com/terraform
-    terraform_version: 0.13.7
-    tflint_version: 0.20.3
-    terraform_docs_version: 0.10.1
-    vagrant_version: 2.2.10
-    git_email: x
-    git_username: 1337blue
-    tmp_dir: /tmp/ansible
     setup_open_ssh_server: false
+    tmp_dir: /tmp/ansible
     username: "{{ lookup ('env', 'USER') }}"
+    vagrant_version: 2.2.10
     vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
+    terraform:
+      version: 0.13.7
+      github: https://github.com/terraform
+      docs:
+        version: 0.10.1
+      lint:
+        version: 0.20.3
+    git:
+      email: x
+      username: 1337blue
     repos:
-      enpass: deb https://apt.enpass.io/ stable main
       opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
       virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
       vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
@@ -29,25 +32,28 @@
       git_config:
         name: user.email
         scope: system
-        value: "{{ git_email }}"
+        value: "{{ git.email }}"
       become: yes
       when:
-        - '"@" in git_email'
+        - '"@" in git.email'
 
     - name: Add git user name
       git_config:
         name: user.name
         scope: system
-        value: "{{ git_username }}"
+        value: "{{ git.username }}"
       become: yes
       when:
-        - 'git_username | length > 1'
+        - 'git.username | length > 1'
 
     - name: Upgrade Packages
       apt:
-       update_cache: yes
-       upgrade: full
+        update_cache: yes
+        upgrade: full
       become: yes
+      register: apt_action
+      retries: 100
+      until: apt_action is success or ('Failed to lock apt for exclusive operation' not in apt_action.msg and '/var/lib/dpkg/lock' not in apt_action.msg)
 
     - name: Install Packages
       apt:
@@ -129,7 +135,6 @@
         classic: yes
       become: yes
       with_items:
-        - 1password-linux
         - kubectl
         - notepad-plus-plus
         - slack
@@ -138,10 +143,11 @@
     # vagrant depends on virtualbox
     - name: Install vagrant and zoom
       apt:
-        deb:
-          - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
-          - https://zoom.us/client/latest/zoom_amd64.deb
+        deb: "{{ item }}"
       become: yes
+      with_items:
+        - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
+        - https://zoom.us/client/latest/zoom_amd64.deb
 
     - name: Is latest terraform installed?
       command: terraform -v
@@ -151,19 +157,19 @@
 
     - name: Download terraform binary
       get_url:
-        url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip
+        url: https://releases.hashicorp.com/terraform/{{ terraform.version }}/terraform_{{ terraform.version }}_linux_amd64.zip
         dest: "{{ tmp_dir }}"
-      when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
+      when: (not is_terraform_installed.rc == 0 or not terraform.version in is_terraform_installed.stdout_lines[0])
 
     - name: Install terraform
       unarchive:
-        src: "{{ tmp_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+        src: "{{ tmp_dir }}/terraform_{{ terraform.version }}_linux_amd64.zip"
         dest: /usr/bin
         mode: '0755'
         owner: root
         group: root
       become: yes
-      when: (not is_terraform_installed.rc == 0 or not terraform_version in is_terraform_installed.stdout_lines[0])
+      when: (not is_terraform_installed.rc == 0 or not terraform.version in is_terraform_installed.stdout_lines[0])
 
     - name: Is tflint installed?
       command: tflint -v
@@ -173,9 +179,9 @@
 
     - name: Download tflint binary
       get_url:
-        url: "{{ github_terraform }}-linters/tflint/releases/download/v{{ tflint_version }}/tflint_linux_amd64.zip"
+        url: "{{ terraform.github }}-linters/tflint/releases/download/v{{ terraform.lint.version }}/tflint_linux_amd64.zip"
         dest: "{{ tmp_dir }}"
-      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+      when: (not is_tflint_installed.rc == 0 or not terraform.lint.version in is_tflint_installed.stdout_lines[0])
 
     - name: Unzip tflint
       unarchive:
@@ -185,7 +191,7 @@
         owner: root
         group: root
       become: yes
-      when: (not is_tflint_installed.rc == 0 or not tflint_version in is_tflint_installed.stdout_lines[0])
+      when: (not is_tflint_installed.rc == 0 or not terraform.lint.version in is_tflint_installed.stdout_lines[0])
 
     - name: Is terraform-docs installed?
       command: terraform-docs -v
@@ -195,11 +201,11 @@
 
     - name: Download terraform-docs binary
       get_url:
-        url: "{{ github_terraform }}-docs/terraform-docs/releases/download/v{{ terraform_docs_version }}/terraform-docs-v{{ terraform_docs_version }}-linux-amd64"
+        url: "{{ terraform.github }}-docs/terraform-docs/releases/download/v{{ terraform.docs.version }}/terraform-docs-v{{ terraform.docs.version }}-linux-amd64"
         dest: /usr/bin/terraform-docs
         mode: '0755'
       become: yes
-      when: (not is_terraform_docs_installed.rc == 0 or not terraform_docs_version in is_terraform_docs_installed.stdout_lines[0])
+      when: (not is_terraform_docs_installed.rc == 0 or not terraform.docs.version in is_terraform_docs_installed.stdout_lines[0])
 
     - name: fetch VS Code extensions
       command: code --list-extensions
