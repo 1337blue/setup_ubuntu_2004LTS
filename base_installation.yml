@@ -141,11 +141,12 @@
         - spotify
 
     # vagrant depends on virtualbox
-    - name: Install vagrant and zoom
+    - name: Install minkube, vagrant and zoom
       apt:
         deb: "{{ item }}"
       become: yes
       with_items:
+        - https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
         - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
         - https://zoom.us/client/latest/zoom_amd64.deb
 
@@ -258,7 +259,7 @@
         gid: 1750
       become: yes
 
-    - name: Append the user to "docker" group
+    - name: Append the user to required groups
       ansible.builtin.user:
         name: "{{ username }}"
         groups: docker
@@ -290,9 +291,8 @@
 
   handlers:
     - name: Enable and restart sshd
-      become: yes
       service:
         name: sshd
         enabled: yes
         state: restarted
-
+      become: yes
