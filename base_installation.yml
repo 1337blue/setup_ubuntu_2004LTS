@@ -279,12 +279,19 @@
         path: "{{ item.path }}"
         state: file
         owner: root
-        group: libvirt
+        group: "{{ item.group }}"
         mode: "{{ item.mode }}"
       become: yes
       loop:
-      - { path: /var/run/libvirt/libvirt-sock, mode: "0770" }
-      - { path: /dev/kvm, mode: "0660" }
+      - { path: /var/run/libvirt/libvirt-sock, group: libvirt, mode: "0770" }
+      - { path: /dev/kvm, group: kvm, mode: "0660" }
+
+    # required to start minikube without it complaining
+    - name: Make kvm2 the default minikube driver
+      command: newgrp libvirt
+
+    - name: Make kvm2 the default minikube driver
+      command: minikube config set driver kvm2
 
     - name: Allow SSH password authentication
       become: yes
