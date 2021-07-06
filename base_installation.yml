@@ -17,6 +17,7 @@
       email: x
       username: 1337blue
     repos:
+      helm: deb https://baltocdn.com/helm/stable/debian/ all main
       opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
       virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
       vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
@@ -106,6 +107,7 @@
         url: "{{ item }}"
       become: yes
       with_items:
+        - https://baltocdn.com/helm/signing.asc
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
         - https://www.virtualbox.org/download/oracle_vbox_2016.asc
