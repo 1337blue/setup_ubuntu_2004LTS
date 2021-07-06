@@ -64,6 +64,7 @@
         - ansible-lint
         - apt-transport-https
         - awscli
+        - bridge-utils
         - build-essential
         - docker.io
         - golang-go
@@ -73,8 +74,10 @@
         - jq
         - keepassxc
         - liblzma-dev
-        - libxml2-dev
         - libcurl4-openssl-dev
+        - libvirt-daemon-system
+        - libvirt-clients
+        - libxml2-dev
         - linux-headers-generic
         - lm-sensors
         - net-tools
@@ -82,6 +85,7 @@
         - openvpn
         - patch
         - python3-pip
+        - qemu-kvm
         - ruby-dev
         - ruby-libxml
         - smartmontools
@@ -104,7 +108,6 @@
       with_items:
         - https://packages.microsoft.com/keys/microsoft.asc
         - https://deb.opera.com/archive.key
-        - https://apt.enpass.io/keys/enpass-linux.key
         - https://www.virtualbox.org/download/oracle_vbox_2016.asc
         - https://www.virtualbox.org/download/oracle_vbox.asc
 
@@ -141,6 +144,7 @@
         - spotify
 
     # vagrant depends on virtualbox
+    # TODO make sure to only install those if required -> avoid download of packages
     - name: Install minkube, vagrant and zoom
       apt:
         deb: "{{ item }}"
@@ -262,9 +266,25 @@
     - name: Append the user to required groups
       ansible.builtin.user:
         name: "{{ username }}"
-        groups: docker
+        groups: "{{ item }}"
         append: yes
       become: yes
+      with_items:
+      - docker
+      - kvm
+      - libvirt
+
+    - name:
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: file
+        owner: root
+        group: libvirt
+        mode: "{{ item.mode }}"
+      become: yes
+      loop:
+      - { path: /var/run/libvirt/libvirt-sock, mode: "0770" }
+      - { path: /dev/kvm, mode: "0660" }
 
     - name: Allow SSH password authentication
       become: yes
