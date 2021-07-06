@@ -287,7 +287,7 @@
       - { path: /dev/kvm, group: kvm, mode: "0660" }
 
     # required to start minikube without it complaining
-    - name: Make kvm2 the default minikube driver
+    - name: Log in to a new group
       command: newgrp libvirt
 
     - name: Make kvm2 the default minikube driver
