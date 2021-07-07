@@ -237,6 +237,7 @@
       - redhat.vscode-yaml
       - teledemic.branch-warnings
       - tht13.python
+      - vivaxy.vscode-conventional-commits
       - vscodevim.vim
 
     - name: Check if vscode settings.json exists
