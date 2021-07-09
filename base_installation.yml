@@ -67,6 +67,8 @@
         - awscli
         - bridge-utils
         - build-essential
+        - curl
+        - direnv
         - docker.io
         - golang-go
         - hddtemp
@@ -82,6 +84,7 @@
         - linux-headers-generic
         - lm-sensors
         - net-tools
+        - openjdk-11-jdk
         - openssh-server
         - openvpn
         - patch
@@ -100,6 +103,7 @@
       pip:
         name:
           - docker-compose
+          - pre-commit
           - yq
 
     - name: Import GPG keys
