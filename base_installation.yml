@@ -151,7 +151,7 @@
 
     # vagrant depends on virtualbox
     # TODO make sure to only install those if required -> avoid download of packages
-    - name: Install minkube, vagrant and zoom
+    - name: Install minikube, vagrant and zoom
       apt:
         deb: "{{ item }}"
       become: yes
@@ -262,6 +262,13 @@
         path: /etc/sysctl.conf
         state: present
         line: fs.inotify.max_user_watches=524288
+
+    - name: Add direnv hook bash to bashrc
+      become: yes
+      lineinfile:
+        path: /etc/bash.bashrc
+        state: present
+        line: eval "$(direnv hook bash)"
 
     - name: Ensure group "docker" exists with correct gid
       ansible.builtin.group:
