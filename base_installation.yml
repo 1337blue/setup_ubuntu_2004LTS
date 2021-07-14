@@ -17,11 +17,38 @@
       email: x
       username: x
     repos:
-      cloudfoundry-cli: deb https://packages.cloudfoundry.org/debian stable main
-      helm: deb https://baltocdn.com/helm/stable/debian/ all main
-      opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
-      virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
-      vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+      - package:
+          name: cf-cli
+          repository:
+            cloudfoundry-cli: deb https://packages.cloudfoundry.org/debian stable main
+          public_keys:
+            - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
+      - package:
+          name: helm
+          repository:
+            helm: deb https://baltocdn.com/helm/stable/debian/ all main
+          public_keys:
+            - https://baltocdn.com/helm/signing.asc
+      - package:
+          name: opera-stable
+          repository:
+            opera-stable: deb [arch=i386,amd64] https://deb.opera.com/opera-stable/ stable non-free
+          public_keys:
+            - https://deb.opera.com/archive.key
+      - package:
+          name: virtualbox-6.1
+          repository:
+            virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
+          public_keys:
+            - https://www.virtualbox.org/download/oracle_vbox.asc
+            - https://www.virtualbox.org/download/oracle_vbox_2016.asc
+      - package:
+          name: code
+          repository:
+            vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+          public_keys:
+            - https://packages.microsoft.com/keys/microsoft.asc
+
 
   tasks:
     - name: Create tmp dir
@@ -109,37 +136,26 @@
 
     - name: Import GPG keys
       apt_key:
-        url: "{{ item }}"
+        url: "{{ item.1 }}"
       become: yes
-      with_items:
-        - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
-        - https://baltocdn.com/helm/signing.asc
-        - https://packages.microsoft.com/keys/microsoft.asc
-        - https://deb.opera.com/archive.key
-        - https://www.virtualbox.org/download/oracle_vbox_2016.asc
-        - https://www.virtualbox.org/download/oracle_vbox.asc
+      with_subelements:
+        - "{{ repos }}"
+        - package.public_keys
 
     - name: Add apt repos
       apt_repository:
-        repo: "{{ item.value }}"
-        filename: "{{ item.key }}"
+        repo: "{{ item.package.repository | dict2items | json_query('[].value') | first }}"
+        filename: "{{ item.package.repository | dict2items | json_query('[].key') | first }}"
       become: yes
-      loop: "{{ lookup ('dict', repos) }}"
+      with_items:
+        "{{ repos }}"
 
     - name: Install non standard packages
       apt:
-        name: "{{ item.key }}"
+        name: "{{ item.package.name }}"
       become: yes
-      when: not item.key in ["vscode", "cloudfoundry-cli"]
-      loop: "{{ lookup ('dict', repos) }}"
-
-    - name: Install the special kids
-      become: yes
-      apt:
-        name:
-        - cf-cli
-        - code
-        - virtualbox-6.1
+      with_items:
+        "{{ repos }}"
 
     - name: Install Snap apps
       snap:
