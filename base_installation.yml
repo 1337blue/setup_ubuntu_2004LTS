@@ -317,15 +317,10 @@
         group: "{{ item.group }}"
         mode: "{{ item.mode }}"
       become: yes
-      register: newgrp
+      notify: Log in to a new group
       loop:
       - { path: /var/run/libvirt/libvirt-sock, group: libvirt, mode: "0770" }
       - { path: /dev/kvm, group: kvm, mode: "0660" }
-
-    # required to start minikube without it complaining
-    - name: Log in to a new group
-      command: newgrp libvirt
-      when: newgrp.changed
 
     - name: Make kvm2 the default minikube driver
       command: minikube config set driver kvm2
@@ -360,3 +355,7 @@
         enabled: yes
         state: restarted
       become: yes
+
+    # required to start minikube without it complaining
+    - name: Log in to a new group
+      command: newgrp libvirt
