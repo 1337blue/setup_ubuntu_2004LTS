@@ -12,7 +12,7 @@
       docs:
         version: 0.10.1
       lint:
-        version: 0.20.3
+        version: 0.28.1
     git:
       email: x
       username: 1337blue
