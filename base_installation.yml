@@ -15,7 +15,7 @@
         version: 0.28.1
     git:
       email: x
-      username: 1337blue
+      username: x
     repos:
       cloudfoundry-cli: deb https://packages.cloudfoundry.org/debian stable main
       helm: deb https://baltocdn.com/helm/stable/debian/ all main
