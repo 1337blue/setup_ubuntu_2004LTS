@@ -231,7 +231,9 @@
 
     - name: Download terraform-docs binary
       get_url:
-        url: "{{ terraform.github }}-docs/terraform-docs/releases/download/v{{ terraform.docs.version }}/terraform-docs-v{{ terraform.docs.version }}-linux-amd64"
+        url: "{{ terraform.github }}-docs/terraform-docs/\
+          releases/download/v{{ terraform.docs.version }}/\
+          terraform-docs-v{{ terraform.docs.version }}-linux-amd64"
         dest: /usr/bin/terraform-docs
         mode: '0755'
       become: yes
