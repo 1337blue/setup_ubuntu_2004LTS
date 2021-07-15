@@ -178,6 +178,11 @@
         - https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
         - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
         - https://zoom.us/client/latest/zoom_amd64.deb
+      register: deb_packages
+
+    - name: Set fact for minikube handler
+      set_fact:
+        minikube_changes: "{{ deb_packages.results | json_query('[?item == `https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb`].changed') }}"
 
     - name: Is latest terraform installed?
       command: terraform -v
@@ -324,6 +329,7 @@
 
     - name: Make kvm2 the default minikube driver
       command: minikube config set driver kvm2
+      when: minikube_changes | bool
 
     - name: Allow SSH password authentication
       become: yes
