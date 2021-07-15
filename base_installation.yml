@@ -189,16 +189,29 @@
           '[?item == `https://storage.googleapis.com/minikube/\
           releases/latest/minikube_latest_amd64.deb`].changed') }}"
 
-    - name: Download terraform binary
+    - name: Is terraform installed?
+      command: terraform -v
+      register: is_terraform_installed
+      ignore_errors: yes
+      changed_when: not is_terraform_installed.rc == 0
+
+    - name: Is tfenv installed?
+      command: tfenv -v
+      register: is_tfenv_installed
+      ignore_errors: yes
+      changed_when: not is_tfenv_installed.rc == 0
+
+    - name: Download tfenv
       get_url:
         url: https://github.com/tfutils/tfenv/archive/refs/tags/v{{ terraform.env.version }}.zip
         dest: "{{ tmp_dir }}"
-#      when: (not is_terraform_installed.rc == 0 or not terraform.version in is_terraform_installed.stdout_lines[0])
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
 
-    - name: Create tfenv dir
+    - name: Cleanup tfenv dir
       file:
         path: "{{ terraform.env.folder }}"
         state: absent
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
 
     - name: Unzip tfenv
       unarchive:
@@ -207,24 +220,17 @@
         owner: "{{ username }}"
         group: "{{ username }}"
       become: yes
-#      when: (not is_terraform_installed.rc == 0 or not terraform.version in is_terraform_installed.stdout_lines[0])
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
 
     - name: Install tfenv
       command: "mv {{ tmp_dir }}/tfenv-{{ terraform.env.version }} {{ terraform.env.folder }}"
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
 
     - name: Find tfenv binaries
       find:
         paths: "{{ terraform.env.folder }}/bin"
       register: tf_env_bins
-      tags:
-        - foo
-
-    - debug:
-        msg: "{{ item.path }}"
-      with_items:
-        - "{{ tf_env_bins.files }}"
-      tags:
-        - foo
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
 
     - name: Link tfenv binaries
       file:
@@ -234,13 +240,9 @@
         owner: root
         group: root
       become: yes
+      when: (not is_tfenv_installed.rc == 0 or not tfenv.version in is_tfenv_installed.stdout_lines[0])
       with_items:
         - "{{ tf_env_bins.files }}"
-
-#      command: terraform -v
-#      register: is_terraform_installed
-#      ignore_errors: yes
-#      changed_when: not is_terraform_installed.rc == 0
 
     - name: Is tflint installed?
       command: tflint -v
