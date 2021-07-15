@@ -182,7 +182,9 @@
 
     - name: Set fact for minikube handler
       set_fact:
-        minikube_changes: "{{ deb_packages.results | json_query('[?item == `https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb`].changed') }}"
+        minikube_changes: "{{ deb_packages.results | json_query(\
+          '[?item == `https://storage.googleapis.com/minikube/\
+          releases/latest/minikube_latest_amd64.deb`].changed') }}"
 
     - name: Is latest terraform installed?
       command: terraform -v
