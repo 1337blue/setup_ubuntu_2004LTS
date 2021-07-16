@@ -4,13 +4,14 @@
     setup_open_ssh_server: false
     tmp_dir: /tmp/ansible
     username: "{{ lookup ('env', 'USER') }}"
+    home_dir: "{{ lookup ('env', 'HOME') }}"
     vagrant_version: 2.2.10
-    vscode_settings: /home/{{ username }}/.config/Code/User/settings.json
+    vscode_settings: "{{ home_dir }}/.config/Code/User/settings.json"
     terraform:
       version: 0.14.11
       env:
         version: 2.2.2
-        folder: /home/{{ username }}/.tfenv
+        folder: "{{ home_dir }}/.tfenv"
       github: https://github.com/terraform
       docs:
         version: 0.10.1
@@ -244,7 +245,7 @@
       with_items:
         - "{{ tf_env_bins.files }}"
 
-    - name: Setup terraform
+    - name: Install terraform
       command: tfenv install {{ terraform.version }}
       when: (not is_terraform_installed.rc == 0 or not terraform.version in is_terraform_installed.stdout_lines[0])
 
