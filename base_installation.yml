@@ -40,13 +40,6 @@
           public_keys:
             - https://deb.opera.com/archive.key
       - package:
-          name: virtualbox-6.1
-          repository:
-            virtualbox-6.1: deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian focal contrib
-          public_keys:
-            - https://www.virtualbox.org/download/oracle_vbox.asc
-            - https://www.virtualbox.org/download/oracle_vbox_2016.asc
-      - package:
           name: code
           repository:
             vscode: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
