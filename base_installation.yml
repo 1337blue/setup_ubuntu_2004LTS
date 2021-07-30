@@ -79,6 +79,13 @@
       when:
         - 'git.username | length > 1'
 
+    - name: Set vim as default editor for git
+      git_config:
+        name: user.editor
+        scope: system
+        value: vim
+      become: yes
+
     - name: Upgrade Packages
       apt:
         update_cache: yes
@@ -102,7 +109,9 @@
         - curl
         - direnv
         - docker.io
+        - git-crypt
         - golang-go
+        - gopass
         - hddtemp
         - htop
         - iotop
@@ -120,12 +129,14 @@
         - openssh-server
         - openvpn
         - patch
+        - powertop
         - python3-pip
         - qemu-kvm
         - ruby-dev
         - ruby-libxml
         - smartmontools
         - software-properties-common
+        - timewarrior
         - tree
         - vim
         - wget
