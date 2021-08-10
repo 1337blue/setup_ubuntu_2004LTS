@@ -5,6 +5,7 @@
     tmp_dir: /tmp/ansible
     username: "{{ lookup ('env', 'USER') }}"
     home_dir: "{{ lookup ('env', 'HOME') }}"
+    minikube_version: 1.9.2-0
     vagrant_version: 2.2.10
     vscode_settings: "{{ home_dir }}/.config/Code/User/settings.json"
     terraform:
@@ -183,7 +184,7 @@
         deb: "{{ item }}"
       become: yes
       with_items:
-        - https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+        - https://storage.googleapis.com/minikube/releases/latest/minikube_{{ minikube_version }}_amd64.deb
         - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
         - https://zoom.us/client/latest/zoom_amd64.deb
       register: deb_packages
