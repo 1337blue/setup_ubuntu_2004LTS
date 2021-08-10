@@ -96,7 +96,6 @@
         packages:
         - ansible-lint
         - apt-transport-https
-        - awscli
         - bridge-utils
         - build-essential
         - curl
@@ -138,6 +137,7 @@
     - name: Install pip packages
       pip:
         name:
+          - awscli
           - docker-compose
           - pre-commit
           - yq
