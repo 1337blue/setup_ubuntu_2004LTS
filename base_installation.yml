@@ -97,7 +97,6 @@
         packages:
         - ansible-lint
         - apt-transport-https
-        - bridge-utils
         - build-essential
         - curl
         - direnv
@@ -112,9 +111,6 @@
         - keepassxc
         - liblzma-dev
         - libcurl4-openssl-dev
-        - libvirt-daemon-system
-        - libvirt-clients
-        - libxml2-dev
         - linux-headers-generic
         - lm-sensors
         - net-tools
@@ -124,7 +120,6 @@
         - patch
         - powertop
         - python3-pip
-        - qemu-kvm
         - ruby-dev
         - ruby-libxml
         - smartmontools
@@ -363,21 +358,6 @@
       become: yes
       with_items:
       - docker
-      - kvm
-      - libvirt
-
-    - name: Make sure that kvm has permissions
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: file
-        owner: root
-        group: "{{ item.group }}"
-        mode: "{{ item.mode }}"
-      become: yes
-      notify: Log in to a new group
-      loop:
-      - { path: /var/run/libvirt/libvirt-sock, group: libvirt, mode: "0770" }
-      - { path: /dev/kvm, group: kvm, mode: "0660" }
 
     - name: Make docker the default minikube driver
       command: minikube config set driver docker
