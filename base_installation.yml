@@ -341,7 +341,10 @@
       lineinfile:
         path: /etc/bash.bashrc
         state: present
-        line: eval "$(direnv hook bash)"
+        line: "{{ item }}"
+      loop:
+        - eval "$(direnv hook bash)"
+        - export PATH="$HOME/.local/bin:$PATH"
 
     - name: Ensure group "docker" exists with correct gid
       ansible.builtin.group:
