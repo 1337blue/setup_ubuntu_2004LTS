@@ -345,6 +345,7 @@
       loop:
         - eval "$(direnv hook bash)"
         - export PATH="$HOME/.local/bin:$PATH"
+        - source <(kubectl completion bash)
 
     - name: Ensure group "docker" exists with correct gid
       ansible.builtin.group:
