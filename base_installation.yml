@@ -359,6 +359,7 @@
         groups: "{{ item }}"
         append: yes
       become: yes
+      notify: Restart docker
       with_items:
       - docker
 
@@ -397,6 +398,9 @@
         state: restarted
       become: yes
 
-    # required to start minikube without it complaining
-    - name: Log in to a new group
-      command: newgrp libvirt
+    - name: Restart docker
+      service:
+        name: docker
+        enabled: yes
+        state: restarted
+      become: yes
