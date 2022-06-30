@@ -15,7 +15,7 @@
         folder: "{{ home_dir }}/.tfenv"
       github: https://github.com/terraform
       docs:
-        version: 0.10.1
+        version: 0.12.1
       lint:
         version: 0.28.1
     git:
@@ -103,7 +103,6 @@
         - docker.io
         - git-crypt
         - golang-go
-        - gopass
         - hddtemp
         - htop
         - iotop
@@ -128,6 +127,7 @@
         - tree
         - vim
         - wget
+        - xpaint
         - zlib1g-dev
 
     - name: Install pip packages
@@ -165,9 +165,18 @@
       snap:
         name: "{{ item }}"
         classic: yes
+        channel: 1.21/stable
       become: yes
       with_items:
         - kubectl
+
+    # vagrant depends on virtualbox
+    - name: Install Snap apps
+      snap:
+        name: "{{ item }}"
+        classic: yes
+      become: yes
+      with_items:
         - notepad-plus-plus
         - slack
         - spotify
@@ -179,6 +188,7 @@
         deb: "{{ item }}"
       become: yes
       with_items:
+        - https://github.com/gopasspw/gopass/releases/download/v1.13.0/gopass_1.13.0_linux_amd64.deb
         - https://storage.googleapis.com/minikube/releases/latest/minikube_{{ minikube_version }}_amd64.deb
         - https://releases.hashicorp.com/vagrant/{{ vagrant_version }}/vagrant_{{ vagrant_version }}_x86_64.deb
         - https://zoom.us/client/latest/zoom_amd64.deb
@@ -309,8 +319,9 @@
       - jmMeessen.jenkins-declarative-support
       - magicstack.MagicPython
       - mhutchie.git-graph
-      - ms-python.python
       - ms-azuretools.vscode-docker
+      - ms-python.python
+      - MS-vsliveshare.vsliveshare-pack
       - redhat.vscode-yaml
       - teledemic.branch-warnings
       - tht13.python
