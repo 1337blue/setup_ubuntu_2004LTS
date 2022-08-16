@@ -23,12 +23,6 @@
       username: x
     repos:
       - package:
-          name: cf-cli
-          repository:
-            cloudfoundry-cli: deb https://packages.cloudfoundry.org/debian stable main
-          public_keys:
-            - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
-      - package:
           name: helm
           repository:
             helm: deb https://baltocdn.com/helm/stable/debian/ all main
@@ -103,9 +97,7 @@
         - docker.io
         - git-crypt
         - golang-go
-        - hddtemp
         - htop
-        - iotop
         - jq
         - keepassxc
         - liblzma-dev
@@ -123,7 +115,6 @@
         - ruby-libxml
         - smartmontools
         - software-properties-common
-        - timewarrior
         - tree
         - vim
         - wget
@@ -135,7 +126,6 @@
         name:
           - awscli
           - docker-compose
-          - pre-commit
           - yq
 
     - name: Import GPG keys
