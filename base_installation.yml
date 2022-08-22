@@ -92,6 +92,7 @@
           - ansible-lint
           - apt-transport-https
           - build-essential
+          - chromium-browser
           - curl
           - direnv
           - docker.io
@@ -115,6 +116,7 @@
           - ruby-libxml
           - smartmontools
           - software-properties-common
+          - thunderbird
           - tree
           - vim
           - wget
